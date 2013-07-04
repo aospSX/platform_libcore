@@ -49,15 +49,22 @@ public final class LocaleData {
     public String[] amPm;
     public String[] eras;
 
-    public String[] longMonthNames;
-    public String[] shortMonthNames;
+    public String[] longMonthNames; // "January", ...
+    public String[] shortMonthNames; // "Jan", ...
+    public String[] tinyMonthNames; // "J", ...
     public String[] longStandAloneMonthNames;
     public String[] shortStandAloneMonthNames;
 
-    public String[] longWeekdayNames;
-    public String[] shortWeekdayNames;
+    public String[] longWeekdayNames; // "Sunday", ...
+    public String[] shortWeekdayNames; // "Sun", ...
+    public String[] tinyWeekdayNames; // "S", ...
     public String[] longStandAloneWeekdayNames;
     public String[] shortStandAloneWeekdayNames;
+
+    // Used by frameworks/base DateSorter and DateUtils.
+    public String yesterday; // "Yesterday".
+    public String today; // "Today".
+    public String tomorrow; // "Tomorrow".
 
     public String fullTimeFormat;
     public String longTimeFormat;

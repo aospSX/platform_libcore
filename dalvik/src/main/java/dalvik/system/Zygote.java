@@ -41,6 +41,15 @@ public class Zygote {
     /** Enable logging of third-party JNI activity. */
     public static final int DEBUG_ENABLE_JNI_LOGGING = 1 << 4;
 
+    /** No external storage should be mounted. */
+    public static final int MOUNT_EXTERNAL_NONE = 0;
+    /** Single-user external storage should be mounted. */
+    public static final int MOUNT_EXTERNAL_SINGLEUSER = 1;
+    /** Multi-user external storage should be mounted. */
+    public static final int MOUNT_EXTERNAL_MULTIUSER = 2;
+    /** All multi-user external storage should be mounted. */
+    public static final int MOUNT_EXTERNAL_MULTIUSER_ALL = 3;
+
     /**
      * When set by the system server, all subsequent apps will be launched in
      * VM safe mode.

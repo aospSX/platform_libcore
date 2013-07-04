@@ -36,7 +36,7 @@ import java.util.Locale;
  *
  * @author Julius Davies
  */
-class DefaultHostnameVerifier implements HostnameVerifier {
+public final class DefaultHostnameVerifier implements HostnameVerifier {
 
     /**
      * This contains a list of 2nd-level domains that aren't allowed to
@@ -197,5 +197,53 @@ class DefaultHostnameVerifier implements HostnameVerifier {
             }
         }
         return subjectAltList;
+    }
+
+    /**
+     * Returns true if {@code hostName} matches the name or pattern {@code cn}.
+     *
+     * @param hostName lowercase host name.
+     * @param cn certificate host name. May include wildcards like
+     *     {@code *.android.com}.
+     */
+    public boolean verifyHostName(String hostName, String cn) {
+        if (hostName == null || hostName.isEmpty() || cn == null || cn.isEmpty()) {
+            return false;
+        }
+
+        cn = cn.toLowerCase(Locale.US);
+
+        if (!cn.contains("*")) {
+            return hostName.equals(cn);
+        }
+
+        if (cn.startsWith("*.") && hostName.regionMatches(0, cn, 2, cn.length() - 2)) {
+            return true; // "*.foo.com" matches "foo.com"
+        }
+
+        int asterisk = cn.indexOf('*');
+        int dot = cn.indexOf('.');
+        if (asterisk > dot) {
+            return false; // malformed; wildcard must be in the first part of the cn
+        }
+
+        if (!hostName.regionMatches(0, cn, 0, asterisk)) {
+            return false; // prefix before '*' doesn't match
+        }
+
+        int suffixLength = cn.length() - (asterisk + 1);
+        int suffixStart = hostName.length() - suffixLength;
+        if (hostName.indexOf('.', asterisk) < suffixStart) {
+            // TODO: remove workaround for *.clients.google.com http://b/5426333
+            if (!hostName.endsWith(".clients.google.com")) {
+                return false; // wildcard '*' can't match a '.'
+            }
+        }
+
+        if (!hostName.regionMatches(suffixStart, cn, asterisk + 1, suffixLength)) {
+            return false; // suffix after '*' doesn't match
+        }
+
+        return true;
     }
 }
