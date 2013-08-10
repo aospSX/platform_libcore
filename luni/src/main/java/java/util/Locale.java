@@ -69,7 +69,8 @@ import libcore.icu.ICU;
  * <tr><td>cupcake/donut/eclair</td> <td>ICU 3.8</td> <td><a href="http://cldr.unicode.org/index/downloads/cldr-1-5">CLDR 1.5</a></td> <td><a href="http://www.unicode.org/versions/Unicode5.0.0/">Unicode 5.0</a></td></tr>
  * <tr><td>froyo</td>                <td>ICU 4.2</td> <td><a href="http://cldr.unicode.org/index/downloads/cldr-1-7">CLDR 1.7</a></td> <td><a href="http://www.unicode.org/versions/Unicode5.1.0/">Unicode 5.1</a></td></tr>
  * <tr><td>gingerbread/honeycomb</td><td>ICU 4.4</td> <td><a href="http://cldr.unicode.org/index/downloads/cldr-1-8">CLDR 1.8</a></td> <td><a href="http://www.unicode.org/versions/Unicode5.2.0/">Unicode 5.2</a></td></tr>
- * <tr><td>ice cream sandwich</td><td>ICU 4.6</td> <td><a href="http://cldr.unicode.org/index/downloads/cldr-1-9">CLDR 1.9</a></td> <td><a href="http://www.unicode.org/versions/Unicode6.0.0/">Unicode 6.0</a></td></tr>
+ * <tr><td>ice cream sandwich</td>   <td>ICU 4.6</td> <td><a href="http://cldr.unicode.org/index/downloads/cldr-1-9">CLDR 1.9</a></td> <td><a href="http://www.unicode.org/versions/Unicode6.0.0/">Unicode 6.0</a></td></tr>
+ * <tr><td>jelly bean</td>           <td>ICU 4.8</td> <td><a href="http://cldr.unicode.org/index/downloads/cldr-2-0">CLDR 2.0</a></td> <td><a href="http://www.unicode.org/versions/Unicode6.0.0/">Unicode 6.0</a></td></tr>
  * </table>
  *
  * <a name="default_locale"><h3>Be wary of the default locale</h3></a>
@@ -395,6 +396,17 @@ public final class Locale implements Cloneable, Serializable {
         if (languageCode.isEmpty()) {
             return "";
         }
+
+        // Last-minute workaround for http://b/7291355 in jb-mr1.
+        // This isn't right for all languages, but it's right for en and tl.
+        // We should have more CLDR data in a future release, but we'll still
+        // probably want to have frameworks/base translate the obsolete tl and
+        // tl-rPH locales to fil and fil-rPH at runtime, at which point
+        // libcore and icu4c will just do the right thing.
+        if (languageCode.equals("tl")) {
+            return "Filipino";
+        }
+
         String result = ICU.getDisplayLanguageNative(toString(), locale.toString());
         if (result == null) { // TODO: do we need to do this, or does ICU do it for us?
             result = ICU.getDisplayLanguageNative(toString(), Locale.getDefault().toString());

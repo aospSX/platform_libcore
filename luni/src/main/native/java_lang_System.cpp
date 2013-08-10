@@ -36,7 +36,7 @@ static void System_log(JNIEnv* env, jclass, jchar type, jstring javaMessage, jth
     ScopedUtfChars message(env, javaMessage);
     if (message.c_str() == NULL) {
         // Since this function is used for last-gasp debugging output, be noisy on failure.
-        LOGE("message.c_str() == NULL");
+        ALOGE("message.c_str() == NULL");
         return;
     }
     int priority;
@@ -88,6 +88,6 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(System, setFieldImpl, "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;)V"),
     NATIVE_METHOD(System, specialProperties, "()[Ljava/lang/String;"),
 };
-int register_java_lang_System(JNIEnv* env) {
-    return jniRegisterNativeMethods(env, "java/lang/System", gMethods, NELEM(gMethods));
+void register_java_lang_System(JNIEnv* env) {
+    jniRegisterNativeMethods(env, "java/lang/System", gMethods, NELEM(gMethods));
 }

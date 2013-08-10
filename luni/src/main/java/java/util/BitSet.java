@@ -85,7 +85,7 @@ public class BitSet implements Serializable, Cloneable {
      */
     public BitSet(int bitCount) {
         if (bitCount < 0) {
-            throw new NegativeArraySizeException();
+            throw new NegativeArraySizeException(Integer.toString(bitCount));
         }
         this.bits = arrayForBits(bitCount);
         this.longCount = 0;
@@ -602,7 +602,7 @@ public class BitSet implements Serializable, Cloneable {
         while (++arrayIndex < longCount && bits[arrayIndex] == ALL_ONES) {
         }
         if (arrayIndex == longCount) {
-            return size();
+            return 64 * longCount;
         }
         return 64 * arrayIndex + Long.numberOfTrailingZeros(~bits[arrayIndex]);
     }

@@ -560,13 +560,7 @@ public class Socket {
             isCreated = true;
             try {
                 if (!streaming || !usingSocks()) {
-                    //
-                    // Bind will happen during connect for INADDR_ANY:0
-                    // Save the system call in the default case
-                    //
-                    if (! addr.isAnyLocalAddress() || 0 != localPort) {
-                        impl.bind(addr, localPort);
-                    }
+                    impl.bind(addr, localPort);
                 }
                 isBound = true;
                 impl.connect(dstAddress, dstPort);

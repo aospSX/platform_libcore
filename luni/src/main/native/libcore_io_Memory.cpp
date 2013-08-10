@@ -69,10 +69,10 @@ template <typename T> static T cast(jint address) {
 // Byte-swap 2 jshort values packed in a jint.
 static inline jint bswap_2x16(jint v) {
     // v is initially ABCD
-    v = bswap_32(v);                              // v=DCBA
 #if defined(__mips__) && defined(__mips_isa_rev) && (__mips_isa_rev >= 2)
     __asm__ volatile ("wsbh %0, %0" : "+r" (v));  // v=BADC
 #else
+    v = bswap_32(v);                              // v=DCBA
     v = (v << 16) | ((v >> 16) & 0xffff);         // v=BADC
 #endif
     return v;
@@ -398,6 +398,6 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(Memory, unsafeBulkGet, "(Ljava/lang/Object;II[BIIZ)V"),
     NATIVE_METHOD(Memory, unsafeBulkPut, "([BIILjava/lang/Object;IIZ)V"),
 };
-int register_libcore_io_Memory(JNIEnv* env) {
-    return jniRegisterNativeMethods(env, "libcore/io/Memory", gMethods, NELEM(gMethods));
+void register_libcore_io_Memory(JNIEnv* env) {
+    jniRegisterNativeMethods(env, "libcore/io/Memory", gMethods, NELEM(gMethods));
 }

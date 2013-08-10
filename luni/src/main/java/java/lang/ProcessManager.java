@@ -168,10 +168,10 @@ final class ProcessManager {
             boolean redirectErrorStream) throws IOException {
         // Make sure we throw the same exceptions as the RI.
         if (taintedCommand == null) {
-            throw new NullPointerException();
+            throw new NullPointerException("taintedCommand == null");
         }
         if (taintedCommand.length == 0) {
-            throw new IndexOutOfBoundsException();
+            throw new IndexOutOfBoundsException("taintedCommand.length == 0");
         }
 
         // Handle security and safety by copying mutable inputs and checking them.
@@ -179,16 +179,16 @@ final class ProcessManager {
         String[] environment = taintedEnvironment != null ? taintedEnvironment.clone() : null;
 
         // Check we're not passing null Strings to the native exec.
-        for (String arg : command) {
-            if (arg == null) {
-                throw new NullPointerException();
+        for (int i = 0; i < command.length; i++) {
+            if (command[i] == null) {
+                throw new NullPointerException("taintedCommand[" + i + "] == null");
             }
         }
         // The environment is allowed to be null or empty, but no element may be null.
         if (environment != null) {
-            for (String env : environment) {
-                if (env == null) {
-                    throw new NullPointerException();
+            for (int i = 0; i < environment.length; i++) {
+                if (environment[i] == null) {
+                    throw new NullPointerException("taintedEnvironment[" + i + "] == null");
                 }
             }
         }
@@ -253,11 +253,17 @@ final class ProcessManager {
         }
 
         public void destroy() {
-            try {
-                Libcore.os.kill(pid, SIGKILL);
-            } catch (ErrnoException e) {
-                System.logI("Failed to destroy process " + pid, e);
+            // If the process hasn't already exited, send it SIGKILL.
+            synchronized (exitValueMutex) {
+                if (exitValue == null) {
+                    try {
+                        Libcore.os.kill(pid, SIGKILL);
+                    } catch (ErrnoException e) {
+                        System.logI("Failed to destroy process " + pid, e);
+                    }
+                }
             }
+            // Close any open streams.
             IoUtils.closeQuietly(inputStream);
             IoUtils.closeQuietly(errorStream);
             IoUtils.closeQuietly(outputStream);
@@ -266,10 +272,8 @@ final class ProcessManager {
         public int exitValue() {
             synchronized (exitValueMutex) {
                 if (exitValue == null) {
-                    throw new IllegalThreadStateException(
-                            "Process has not yet terminated.");
+                    throw new IllegalThreadStateException("Process has not yet terminated: " + pid);
                 }
-
                 return exitValue;
             }
         }

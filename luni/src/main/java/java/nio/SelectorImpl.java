@@ -150,7 +150,7 @@ final class SelectorImpl extends AbstractSelector {
 
     @Override public int select(long timeout) throws IOException {
         if (timeout < 0) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("timeout < 0: " + timeout);
         }
         // Our timeout is interpreted differently to Unix's --- 0 means block. See selectNow.
         return selectInternal((timeout == 0) ? -1 : timeout);
@@ -170,7 +170,7 @@ final class SelectorImpl extends AbstractSelector {
                     synchronized (keysLock) {
                         preparePollFds();
                     }
-                    int rc;
+                    int rc = -1;
                     try {
                         if (isBlock) {
                             begin();
@@ -178,7 +178,9 @@ final class SelectorImpl extends AbstractSelector {
                         try {
                             rc = Libcore.os.poll(pollFds.array(), (int) timeout);
                         } catch (ErrnoException errnoException) {
-                            throw errnoException.rethrowAsIOException();
+                            if (errnoException.errno != EINTR) {
+                                throw errnoException.rethrowAsIOException();
+                            }
                         }
                     } finally {
                         if (isBlock) {

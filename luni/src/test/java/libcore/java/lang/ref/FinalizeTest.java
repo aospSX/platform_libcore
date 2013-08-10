@@ -27,24 +27,44 @@ public final class FinalizeTest extends TestCase {
         AtomicBoolean finalized = new AtomicBoolean();
         createFinalizableObject(finalized);
 
-        induceFinalization();
+        FinalizationTester.induceFinalization();
         if (!finalized.get()) {
-            fail();
+            fail("object not yet finalized");
         }
     }
 
     /**
-     * Prevent live-precise bugs from interfering with analysis of what is
-     * reachable. Do not inline this method; otherwise tests may fail on VMs
-     * that are not live-precise. http://b/4191345
+     * Test verifies that runFinalization() does not mess up objects
+     * that should be finalized later on. http://b/6907299
      */
-    private void createFinalizableObject(final AtomicBoolean finalized) {
-        new X() {
+    public void testInducedFinalization() throws Exception {
+        AtomicBoolean finalized1 = new AtomicBoolean();
+        AtomicBoolean finalized2 = new AtomicBoolean();
+        createFinalizableObject(finalized1);
+        createFinalizableObject(finalized2);
+        FinalizationTester.induceFinalization();
+        if (!finalized1.get() || !finalized2.get()) {
+            fail("not yet finalized: " + finalized1.get() + " " + finalized2.get());
+        }
+    }
+
+    /** Do not inline this method; that could break non-precise GCs. See FinalizationTester. */
+    private X createFinalizableObject(final AtomicBoolean finalized) {
+        X result = new X() {
             @Override protected void finalize() throws Throwable {
                 super.finalize();
                 finalized.set(true);
             }
         };
+        FinalizationTester.induceFinalization();
+        // Dance around a bit to discourage dx from realizing that 'result' is no longer live.
+        boolean wasFinalized = finalized.get();
+        if (wasFinalized) {
+            fail("finalizer called early"); // ...because 'result' is still live until we return.
+        }
+        // But we don't actually want to return 'result' because then we'd have to worry about
+        // the caller accidentally keeping it live.
+        return wasFinalized ? result : null;
     }
 
     static class X {}
@@ -56,22 +76,8 @@ public final class FinalizeTest extends TestCase {
         } catch (AssertionError expected) {
         }
 
-        induceFinalization();
+        FinalizationTester.induceFinalization();
         assertTrue("object whose constructor threw was not finalized", ConstructionFails.finalized);
-    }
-
-    private void induceFinalization() throws Exception {
-        System.gc();
-        enqueueReferences();
-        System.runFinalization();
-    }
-
-    /**
-     * Hack. We don't have a programmatic way to wait for the reference queue
-     * daemon to move references to the appropriate queues.
-     */
-    private void enqueueReferences() throws InterruptedException {
-        Thread.sleep(100);
     }
 
     static class ConstructionFails {
@@ -97,7 +103,7 @@ public final class FinalizeTest extends TestCase {
         createSlowFinalizer(2000, latch);
         createSlowFinalizer(4000, latch);
         createSlowFinalizer(8000, latch);
-        induceFinalization();
+        FinalizationTester.induceFinalization();
         latch.await();
     }
 
@@ -119,7 +125,7 @@ public final class FinalizeTest extends TestCase {
         AtomicInteger count = new AtomicInteger();
         AtomicBoolean keepGoing = new AtomicBoolean(true);
         createChainedFinalizer(count, keepGoing);
-        induceFinalization();
+        FinalizationTester.induceFinalization();
         keepGoing.set(false);
         assertTrue(count.get() > 0);
     }
@@ -133,7 +139,7 @@ public final class FinalizeTest extends TestCase {
                     createChainedFinalizer(counter, keepGoing); // recursive!
                 }
                 System.gc();
-                enqueueReferences();
+                FinalizationTester.enqueueReferences();
             }
         };
     }

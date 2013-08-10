@@ -71,7 +71,7 @@ public:
         if (mJavaInput) {
             mEnv->ReleaseStringChars(mJavaInput, mChars);
         }
-        maybeThrowIcuException(mEnv, mStatus);
+        maybeThrowIcuException(mEnv, "utext_close", mStatus);
     }
 
     RegexMatcher* operator->() {
@@ -173,7 +173,7 @@ static jint Matcher_openImpl(JNIEnv* env, jclass, jint patternAddr) {
     RegexPattern* pattern = reinterpret_cast<RegexPattern*>(static_cast<uintptr_t>(patternAddr));
     UErrorCode status = U_ZERO_ERROR;
     RegexMatcher* result = pattern->matcher(status);
-    maybeThrowIcuException(env, status);
+    maybeThrowIcuException(env, "RegexPattern::matcher", status);
     return static_cast<jint>(reinterpret_cast<uintptr_t>(result));
 }
 
@@ -211,6 +211,6 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(Matcher, useAnchoringBoundsImpl, "(IZ)V"),
     NATIVE_METHOD(Matcher, useTransparentBoundsImpl, "(IZ)V"),
 };
-int register_java_util_regex_Matcher(JNIEnv* env) {
-    return jniRegisterNativeMethods(env, "java/util/regex/Matcher", gMethods, NELEM(gMethods));
+void register_java_util_regex_Matcher(JNIEnv* env) {
+    jniRegisterNativeMethods(env, "java/util/regex/Matcher", gMethods, NELEM(gMethods));
 }

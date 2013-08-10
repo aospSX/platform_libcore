@@ -38,10 +38,10 @@
 #include <netinet/ip.h>
 #include <linux/udp.h>
 
-union GCC_HIDDEN sockunion {
+union sockunion {
     sockaddr sa;
     sockaddr_ll sll;
-} su;
+};
 
 /*
  * Creates a socket suitable for raw socket operations.  The socket is
@@ -53,37 +53,37 @@ union GCC_HIDDEN sockunion {
  * setBlocking() method followed by polymorphic bind().
  */
 static void RawSocket_create(JNIEnv* env, jclass, jobject fileDescriptor,
-    jstring interfaceName) {
+    jshort protocolType, jstring interfaceName)
+{
 
   ScopedUtfChars ifname(env, interfaceName);
   if (ifname.c_str() == NULL) {
     return;
   }
 
-  short protocol = ETH_P_IP;
   sockunion su;
   memset(&su, 0, sizeof(su));
   su.sll.sll_family = PF_PACKET;
-  su.sll.sll_protocol = htons(protocol);
+  su.sll.sll_protocol = htons(protocolType);
   su.sll.sll_ifindex = if_nametoindex(ifname.c_str());
+  int sock = socket(PF_PACKET, SOCK_DGRAM, htons(protocolType));
 
-  int sock = socket(PF_PACKET, SOCK_DGRAM, htons(protocol));
   if (sock == -1) {
-    LOGE("Can't create socket %s", strerror(errno));
+    ALOGE("Can't create socket %s", strerror(errno));
     jniThrowSocketException(env, errno);
     return;
   }
 
   jniSetFileDescriptorOfFD(env, fileDescriptor, sock);
   if (!setBlocking(sock, false)) {
-    LOGE("Can't set non-blocking mode on socket %s", strerror(errno));
+    ALOGE("Can't set non-blocking mode on socket %s", strerror(errno));
     jniThrowSocketException(env, errno);
     return;
   }
 
   int err = bind(sock, &su.sa, sizeof(su));
   if (err != 0) {
-    LOGE("Socket bind error %s", strerror(errno));
+    ALOGE("Socket bind error %s", strerror(errno));
     jniThrowSocketException(env, errno);
     return;
   }
@@ -96,8 +96,8 @@ static void RawSocket_create(JNIEnv* env, jclass, jobject fileDescriptor,
  * Assumes that the caller has validated the offset & byteCount values.
  */
 static int RawSocket_sendPacket(JNIEnv* env, jclass, jobject fileDescriptor,
-    jstring interfaceName, jbyteArray destMac, jbyteArray packet, jint offset,
-    jint byteCount)
+    jstring interfaceName, jshort protocolType, jbyteArray destMac,
+    jbyteArray packet, jint offset, jint byteCount)
 {
   NetFd fd(env, fileDescriptor);
 
@@ -120,14 +120,13 @@ static int RawSocket_sendPacket(JNIEnv* env, jclass, jobject fileDescriptor,
     return 0;
   }
 
-  short protocol = ETH_P_IP;
   sockunion su;
   memset(&su, 0, sizeof(su));
   su.sll.sll_hatype = htons(1); // ARPHRD_ETHER
   su.sll.sll_halen = mac.size();
   memcpy(&su.sll.sll_addr, mac.get(), mac.size());
   su.sll.sll_family = AF_PACKET;
-  su.sll.sll_protocol = htons(protocol);
+  su.sll.sll_protocol = htons(protocolType);
   su.sll.sll_ifindex = if_nametoindex(ifname.c_str());
 
   int err;
@@ -185,31 +184,33 @@ static jint RawSocket_recvPacket(JNIEnv* env, jclass, jobject fileDescriptor,
     return 0;
   }
 
-  // quick check for UDP type & UDP port
-  // the packet is an IP header, UDP header, and UDP payload
-  if ((size < (sizeof(iphdr) + sizeof(udphdr)))) {
-    return 0;  // runt packet
-  }
+  if (port != -1) {
+    // quick check for UDP type & UDP port
+    // the packet is an IP header, UDP header, and UDP payload
+    if ((size < (sizeof(struct iphdr) + sizeof(struct udphdr)))) {
+      return 0;  // runt packet
+    }
 
-  u_int8_t ip_proto = ((iphdr *) packetData)->protocol;
-  if (ip_proto != IPPROTO_UDP) {
-    return 0;  // something other than UDP
-  }
+    u_int8_t ip_proto = ((iphdr *) packetData)->protocol;
+    if (ip_proto != IPPROTO_UDP) {
+      return 0;  // something other than UDP
+    }
 
-  __be16 destPort = htons((reinterpret_cast<udphdr*>(packetData + sizeof(iphdr)))->dest);
-  if (destPort != port) {
-    return 0; // something other than requested port
+    __be16 destPort = htons((reinterpret_cast<udphdr*>(packetData + sizeof(iphdr)))->dest);
+    if (destPort != port) {
+      return 0; // something other than requested port
+    }
   }
 
   return size;
 }
 
 static JNINativeMethod gRawMethods[] = {
-  NATIVE_METHOD(RawSocket, create, "(Ljava/io/FileDescriptor;Ljava/lang/String;)V"),
-  NATIVE_METHOD(RawSocket, sendPacket, "(Ljava/io/FileDescriptor;Ljava/lang/String;[B[BII)I"),
+  NATIVE_METHOD(RawSocket, create, "(Ljava/io/FileDescriptor;SLjava/lang/String;)V"),
+  NATIVE_METHOD(RawSocket, sendPacket, "(Ljava/io/FileDescriptor;Ljava/lang/String;S[B[BII)I"),
   NATIVE_METHOD(RawSocket, recvPacket, "(Ljava/io/FileDescriptor;[BIIII)I"),
 };
 
-int register_libcore_net_RawSocket(JNIEnv* env) {
-  return jniRegisterNativeMethods(env, "libcore/net/RawSocket", gRawMethods, NELEM(gRawMethods));
+void register_libcore_net_RawSocket(JNIEnv* env) {
+  jniRegisterNativeMethods(env, "libcore/net/RawSocket", gRawMethods, NELEM(gRawMethods));
 }

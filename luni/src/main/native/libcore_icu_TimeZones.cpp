@@ -43,14 +43,14 @@ static jobjectArray TimeZones_forCountryCode(JNIEnv* env, jclass, jstring countr
     }
     UErrorCode status = U_ZERO_ERROR;
     int32_t idCount = ids->count(status);
-    if (maybeThrowIcuException(env, status)) {
+    if (maybeThrowIcuException(env, "StringEnumeration::count", status)) {
         return NULL;
     }
 
     jobjectArray result = env->NewObjectArray(idCount, JniConstants::stringClass, NULL);
     for (int32_t i = 0; i < idCount; ++i) {
         const UnicodeString* id = ids->snext(status);
-        if (maybeThrowIcuException(env, status)) {
+        if (maybeThrowIcuException(env, "StringEnumeration::snext", status)) {
             return NULL;
         }
         ScopedLocalRef<jstring> idString(env, env->NewString(id->getBuffer(), id->length()));
@@ -226,6 +226,6 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(TimeZones, forCountryCode, "(Ljava/lang/String;)[Ljava/lang/String;"),
     NATIVE_METHOD(TimeZones, getZoneStringsImpl, "(Ljava/lang/String;[Ljava/lang/String;)[[Ljava/lang/String;"),
 };
-int register_libcore_icu_TimeZones(JNIEnv* env) {
-    return jniRegisterNativeMethods(env, "libcore/icu/TimeZones", gMethods, NELEM(gMethods));
+void register_libcore_icu_TimeZones(JNIEnv* env) {
+    jniRegisterNativeMethods(env, "libcore/icu/TimeZones", gMethods, NELEM(gMethods));
 }

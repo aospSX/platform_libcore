@@ -21,7 +21,7 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import junit.framework.TestCase;
-import libcore.java.util.SerializableTester;
+import libcore.util.SerializationTester;
 
 public final class URLTest extends TestCase {
 
@@ -103,7 +103,7 @@ public final class URLTest extends TestCase {
                 + "e00017870ffffffff74000e757365723a7061737340686f73747400102f706174682f66696c653f7"
                 + "175657279740004686f7374740004687474707400046861736878";
         URL url = new URL("http://user:pass@host/path/file?query#hash");
-        new SerializableTester<URL>(url, s).test();
+        new SerializationTester<URL>(url, s).test();
     }
 
     /**
@@ -119,7 +119,7 @@ public final class URLTest extends TestCase {
                 + "47400102f706174682f66696c653f7175657279740004686f7374740004687474707400046861736"
                 + "878";
         final URL url = new URL("http://user:pass@host/path/file?query#hash");
-        new SerializableTester<URL>(url, s) {
+        new SerializationTester<URL>(url, s) {
             @Override protected void verify(URL deserialized) {
                 assertEquals(url.hashCode(), deserialized.hashCode());
             }
@@ -666,6 +666,32 @@ public final class URLTest extends TestCase {
         assertEquals("", new URL("http", "host", "").getPath());
         assertEquals("", new URL("http", "host", -1, "").getPath());
         assertEquals("", new URL("http", "host", -1, "", null).getPath());
+    }
+
+    public void testPartContainsSpace() throws Exception {
+        try {
+            new URL("ht tp://host/");
+            fail();
+        } catch (MalformedURLException expected) {
+        }
+        assertEquals("user name", new URL("http://user name@host/").getUserInfo());
+        assertEquals("ho st", new URL("http://ho st/").getHost());
+        try {
+            new URL("http://host:80 80/");
+            fail();
+        } catch (MalformedURLException expected) {
+        }
+        assertEquals("/fi le", new URL("http://host/fi le").getFile());
+        assertEquals("que ry", new URL("http://host/file?que ry").getQuery());
+        assertEquals("re f", new URL("http://host/file?query#re f").getRef());
+    }
+
+    // http://code.google.com/p/android/issues/detail?id=37577
+    public void testUnderscore() throws Exception {
+        URL url = new URL("http://a_b.c.d.net/");
+        assertEquals("a_b.c.d.net", url.getAuthority());
+        // The RFC's don't permit underscores in hostnames, but URL accepts them (unlike URI).
+        assertEquals("a_b.c.d.net", url.getHost());
     }
 
     // Adding a new test? Consider adding an equivalent test to URITest.java

@@ -25,6 +25,8 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import libcore.io.Libcore;
+import libcore.io.OsConstants;
 import junit.framework.TestCase;
 import tests.net.StuckServer;
 
@@ -53,11 +55,10 @@ public class SelectorTest extends TestCase {
     public void testNonBlockingConnect_slow() throws Exception {
         // Test the case where we have to wait for the connection.
         Selector selector = Selector.open();
-        StuckServer ss = new StuckServer();
+        StuckServer ss = new StuckServer(true);
         try {
             SocketChannel sc = SocketChannel.open();
             sc.configureBlocking(false);
-            ss.unblockAfterMs(2000);
             sc.connect(ss.getLocalSocketAddress());
             SelectionKey key = sc.register(selector, SelectionKey.OP_CONNECT);
             assertEquals(1, selector.select());
@@ -67,6 +68,25 @@ public class SelectorTest extends TestCase {
             selector.close();
             ss.close();
         }
+    }
+
+    // http://b/6453247
+    // This test won't work on the host until/unless we start using libcorkscrew there.
+    // The runtime itself blocks SIGQUIT, so that doesn't cause poll(2) to EINTR directly.
+    // The EINTR is caused by the way libcorkscrew works.
+    public void testEINTR() throws Exception {
+        Selector selector = Selector.open();
+        new Thread(new Runnable() {
+            @Override public void run() {
+                try {
+                    Thread.sleep(2000);
+                    Libcore.os.kill(Libcore.os.getpid(), OsConstants.SIGQUIT);
+                } catch (Exception ex) {
+                    fail();
+                }
+            }
+        }).start();
+        assertEquals(0, selector.select());
     }
 
     // http://code.google.com/p/android/issues/detail?id=15388

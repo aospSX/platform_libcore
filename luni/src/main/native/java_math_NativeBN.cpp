@@ -405,7 +405,7 @@ static jboolean NativeBN_BN_is_bit_set(JNIEnv* env, jclass, BIGNUM* a, int n) {
 }
 
 static jboolean NativeBN_modifyBit(JNIEnv* env, jclass, BIGNUM* a, int n, int op) {
-// LOGD("NativeBN_BN_modifyBit");
+// ALOGD("NativeBN_BN_modifyBit");
     if (!oneValidHandle(env, a)) return JNI_FALSE;
     switch (op) {
     case 1: return BN_set_bit(a, n);
@@ -553,6 +553,6 @@ static JNINativeMethod gMethods[] = {
    NATIVE_METHOD(NativeBN, sign, "(I)I"),
    NATIVE_METHOD(NativeBN, twosComp2bn, "([BII)Z"),
 };
-int register_java_math_NativeBN(JNIEnv* env) {
-    return jniRegisterNativeMethods(env, "java/math/NativeBN", gMethods, NELEM(gMethods));
+void register_java_math_NativeBN(JNIEnv* env) {
+    jniRegisterNativeMethods(env, "java/math/NativeBN", gMethods, NELEM(gMethods));
 }

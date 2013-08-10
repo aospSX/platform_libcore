@@ -17,6 +17,7 @@
 package libcore.java.nio;
 
 import java.io.*;
+import java.lang.reflect.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.util.Arrays;
@@ -653,5 +654,101 @@ public class BufferTest extends TestCase {
         CharBuffer cb = b.asCharBuffer();
         CharSequence cs = cb.subSequence(0, cb.length());
         assertEquals("Hello", cs.toString());
+    }
+
+    public void testHasArrayOnJniDirectByteBuffer() throws Exception {
+        // Simulate a call to JNI's NewDirectByteBuffer.
+        Class<?> c = Class.forName("java.nio.ReadWriteDirectByteBuffer");
+        Constructor<?> ctor = c.getDeclaredConstructor(int.class, int.class);
+        ctor.setAccessible(true);
+        ByteBuffer bb = (ByteBuffer) ctor.newInstance(0, 0);
+
+        try {
+            bb.array();
+            fail();
+        } catch (UnsupportedOperationException expected) {
+        }
+        try {
+            bb.arrayOffset();
+            fail();
+        } catch (UnsupportedOperationException expected) {
+        }
+        assertFalse(bb.hasArray());
+    }
+
+    public void testBug6085292() {
+        ByteBuffer b = ByteBuffer.allocateDirect(1);
+
+        try {
+            b.asCharBuffer().get();
+            fail();
+        } catch (BufferUnderflowException expected) {
+        }
+        try {
+            b.asCharBuffer().get(0);
+            fail();
+        } catch (IndexOutOfBoundsException expected) {
+            assertTrue(expected.getMessage().contains("limit=0"));
+        }
+
+        try {
+            b.asDoubleBuffer().get();
+            fail();
+        } catch (BufferUnderflowException expected) {
+        }
+        try {
+            b.asDoubleBuffer().get(0);
+            fail();
+        } catch (IndexOutOfBoundsException expected) {
+            assertTrue(expected.getMessage().contains("limit=0"));
+        }
+
+        try {
+            b.asFloatBuffer().get();
+            fail();
+        } catch (BufferUnderflowException expected) {
+        }
+        try {
+            b.asFloatBuffer().get(0);
+            fail();
+        } catch (IndexOutOfBoundsException expected) {
+            assertTrue(expected.getMessage().contains("limit=0"));
+        }
+
+        try {
+            b.asIntBuffer().get();
+            fail();
+        } catch (BufferUnderflowException expected) {
+        }
+        try {
+            b.asIntBuffer().get(0);
+            fail();
+        } catch (IndexOutOfBoundsException expected) {
+            assertTrue(expected.getMessage().contains("limit=0"));
+        }
+
+        try {
+            b.asLongBuffer().get();
+            fail();
+        } catch (BufferUnderflowException expected) {
+        }
+        try {
+            b.asLongBuffer().get(0);
+            fail();
+        } catch (IndexOutOfBoundsException expected) {
+            assertTrue(expected.getMessage().contains("limit=0"));
+        }
+
+        try {
+            b.asShortBuffer().get();
+            fail();
+        } catch (BufferUnderflowException expected) {
+        }
+        try {
+            b.asShortBuffer().get(0);
+            fail();
+        } catch (IndexOutOfBoundsException expected) {
+            assertTrue(expected.getMessage().contains("limit=0"));
+        }
     }
 }

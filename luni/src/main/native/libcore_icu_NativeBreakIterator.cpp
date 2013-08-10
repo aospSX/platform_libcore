@@ -55,14 +55,14 @@ public:
         size_t charCount = env->GetStringLength(mString);
         UErrorCode status = U_ZERO_ERROR;
         ubrk_setText(mIt, mChars, charCount, &status);
-        maybeThrowIcuException(env, status);
+        maybeThrowIcuException(env, "ubrk_setText", status);
     }
 
     BreakIteratorPeer* clone(JNIEnv* env) {
         UErrorCode status = U_ZERO_ERROR;
         jint bufferSize = U_BRK_SAFECLONE_BUFFERSIZE;
         UBreakIterator* it = ubrk_safeClone(mIt, NULL, &bufferSize, &status);
-        if (maybeThrowIcuException(env, status)) {
+        if (maybeThrowIcuException(env, "ubrk_safeClone", status)) {
             return NULL;
         }
         BreakIteratorPeer* result = new BreakIteratorPeer(it);
@@ -120,7 +120,7 @@ static jint makeIterator(JNIEnv* env, jstring locale, UBreakIteratorType type) {
         return 0;
     }
     UBreakIterator* it = ubrk_open(type, localeChars.c_str(), NULL, 0, &status);
-    if (maybeThrowIcuException(env, status)) {
+    if (maybeThrowIcuException(env, "ubrk_open", status)) {
         return 0;
     }
     return (new BreakIteratorPeer(it))->toAddress();
@@ -220,6 +220,6 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(NativeBreakIterator, previousImpl, "(I)I"),
     NATIVE_METHOD(NativeBreakIterator, setTextImpl, "(ILjava/lang/String;)V"),
 };
-int register_libcore_icu_NativeBreakIterator(JNIEnv* env) {
-    return jniRegisterNativeMethods(env, "libcore/icu/NativeBreakIterator", gMethods, NELEM(gMethods));
+void register_libcore_icu_NativeBreakIterator(JNIEnv* env) {
+    jniRegisterNativeMethods(env, "libcore/icu/NativeBreakIterator", gMethods, NELEM(gMethods));
 }

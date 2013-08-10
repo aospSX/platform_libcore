@@ -20,6 +20,7 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
+import libcore.util.SerializationTester;
 
 public class CalendarTest extends junit.framework.TestCase {
 
@@ -186,9 +187,9 @@ public class CalendarTest extends junit.framework.TestCase {
                 + "10000000500000001000000200000000178";
         Calendar calendar = new GregorianCalendar(1970, 1, 1, 0, 0, 0);
         calendar.setTimeZone(TimeZone.getTimeZone("GMT-08:00"));
-        calendar.setFirstDayOfWeek(1);
+        // Starting from ICU4.8 release, the default minimalDaysInFirstWeek changed from 4 to 1.
         calendar.setMinimalDaysInFirstWeek(4);
-        new SerializableTester<Calendar>(calendar, s).test();
+        new SerializationTester<Calendar>(calendar, s).test();
     }
 
     private void assertCalendarEquals(Calendar calendar,

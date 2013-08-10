@@ -28,7 +28,7 @@ static jstring NativeNormalizer_normalizeImpl(JNIEnv* env, jclass, jstring s, ji
     UErrorCode status = U_ZERO_ERROR;
     UnicodeString dst;
     Normalizer::normalize(src.unicodeString(), mode, 0, dst, status);
-    maybeThrowIcuException(env, status);
+    maybeThrowIcuException(env, "Normalizer::normalize", status);
     return dst.isBogus() ? NULL : env->NewString(dst.getBuffer(), dst.length());
 }
 
@@ -37,7 +37,7 @@ static jboolean NativeNormalizer_isNormalizedImpl(JNIEnv* env, jclass, jstring s
     UNormalizationMode mode = static_cast<UNormalizationMode>(intMode);
     UErrorCode status = U_ZERO_ERROR;
     UBool result = Normalizer::isNormalized(src.unicodeString(), mode, status);
-    maybeThrowIcuException(env, status);
+    maybeThrowIcuException(env, "Normalizer::isNormalized", status);
     return result;
 }
 
@@ -45,6 +45,6 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(NativeNormalizer, normalizeImpl, "(Ljava/lang/String;I)Ljava/lang/String;"),
     NATIVE_METHOD(NativeNormalizer, isNormalizedImpl, "(Ljava/lang/String;I)Z"),
 };
-int register_libcore_icu_NativeNormalizer(JNIEnv* env) {
-    return jniRegisterNativeMethods(env, "libcore/icu/NativeNormalizer", gMethods, NELEM(gMethods));
+void register_libcore_icu_NativeNormalizer(JNIEnv* env) {
+    jniRegisterNativeMethods(env, "libcore/icu/NativeNormalizer", gMethods, NELEM(gMethods));
 }

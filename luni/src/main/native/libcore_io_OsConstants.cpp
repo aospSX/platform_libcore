@@ -230,6 +230,7 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
     initConstant(env, c, "O_CREAT", O_CREAT);
     initConstant(env, c, "O_EXCL", O_EXCL);
     initConstant(env, c, "O_NOCTTY", O_NOCTTY);
+    initConstant(env, c, "O_NOFOLLOW", O_NOFOLLOW);
     initConstant(env, c, "O_NONBLOCK", O_NONBLOCK);
     initConstant(env, c, "O_RDONLY", O_RDONLY);
     initConstant(env, c, "O_RDWR", O_RDWR);
@@ -447,6 +448,6 @@ static void OsConstants_initConstants(JNIEnv* env, jclass c) {
 static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(OsConstants, initConstants, "()V"),
 };
-int register_libcore_io_OsConstants(JNIEnv* env) {
-    return jniRegisterNativeMethods(env, "libcore/io/OsConstants", gMethods, NELEM(gMethods));
+void register_libcore_io_OsConstants(JNIEnv* env) {
+    jniRegisterNativeMethods(env, "libcore/io/OsConstants", gMethods, NELEM(gMethods));
 }

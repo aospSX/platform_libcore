@@ -19,7 +19,7 @@ package libcore.java.net;
 import java.net.URI;
 import java.net.URISyntaxException;
 import junit.framework.TestCase;
-import libcore.java.util.SerializableTester;
+import libcore.util.SerializationTester;
 
 public final class URITest extends TestCase {
 
@@ -67,7 +67,7 @@ public final class URITest extends TestCase {
                 + "77400124c6a6176612f6c616e672f537472696e673b787074002a687474703a2f2f757365723a706"
                 + "1737340686f73742f706174682f66696c653f7175657279236861736878";
         URI uri = new URI("http://user:pass@host/path/file?query#hash");
-        new SerializableTester<URI>(uri, s).test();
+        new SerializationTester<URI>(uri, s).test();
     }
 
     public void testEmptyHost() throws Exception {
@@ -619,6 +619,52 @@ public final class URITest extends TestCase {
         assertEquals(relative, absolute.relativize(relative));
         assertEquals(absolute, relative.relativize(absolute));
         assertEquals(new URI(""), relative.relativize(relative));
+    }
+
+    public void testPartContainsSpace() throws Exception {
+        try {
+            new URI("ht tp://host/");
+            fail();
+        } catch (URISyntaxException expected) {
+        }
+        try {
+            new URI("http://user name@host/");
+            fail();
+        } catch (URISyntaxException expected) {
+        }
+        try {
+            new URI("http://ho st/");
+            fail();
+        } catch (URISyntaxException expected) {
+        }
+        try {
+            new URI("http://host:80 80/");
+            fail();
+        } catch (URISyntaxException expected) {
+        }
+        try {
+            new URI("http://host/fi le");
+            fail();
+        } catch (URISyntaxException expected) {
+        }
+        try {
+            new URI("http://host/file?que ry");
+            fail();
+        } catch (URISyntaxException expected) {
+        }
+        try {
+            new URI("http://host/file?query#re f");
+            fail();
+        } catch (URISyntaxException expected) {
+        }
+    }
+
+    // http://code.google.com/p/android/issues/detail?id=37577
+    public void testUnderscore() throws Exception {
+        URI uri = new URI("http://a_b.c.d.net/");
+        assertEquals("a_b.c.d.net", uri.getAuthority());
+        // The RFC's don't permit underscores in hostnames, and neither does URI (unlike URL).
+        assertNull(uri.getHost());
     }
 
     // Adding a new test? Consider adding an equivalent test to URLTest.java

@@ -255,7 +255,7 @@ static pid_t ProcessManager_exec(JNIEnv* env, jclass, jobjectArray javaCommands,
     // Re-throw exception if present.
     if (exception != NULL) {
         if (env->Throw(exception) < 0) {
-            LOGE("Error rethrowing exception!");
+            ALOGE("Error rethrowing exception!");
         }
     }
 
@@ -265,6 +265,6 @@ static pid_t ProcessManager_exec(JNIEnv* env, jclass, jobjectArray javaCommands,
 static JNINativeMethod methods[] = {
     NATIVE_METHOD(ProcessManager, exec, "([Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;Ljava/io/FileDescriptor;Ljava/io/FileDescriptor;Ljava/io/FileDescriptor;Z)I"),
 };
-int register_java_lang_ProcessManager(JNIEnv* env) {
-    return jniRegisterNativeMethods(env, "java/lang/ProcessManager", methods, NELEM(methods));
+void register_java_lang_ProcessManager(JNIEnv* env) {
+    jniRegisterNativeMethods(env, "java/lang/ProcessManager", methods, NELEM(methods));
 }

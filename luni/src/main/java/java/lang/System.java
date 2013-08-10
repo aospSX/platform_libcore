@@ -455,7 +455,7 @@ public final class System {
      */
     public static String clearProperty(String key) {
         if (key == null) {
-            throw new NullPointerException();
+            throw new NullPointerException("key == null");
         }
         if (key.isEmpty()) {
             throw new IllegalArgumentException();
@@ -616,7 +616,8 @@ public final class System {
      *
      * <p>Security managers do <i>not</i> provide a secure environment for
      * executing untrusted code and are unsupported on Android. Untrusted code
-     * cannot be safely isolated within a single VM on Android.
+     * cannot be safely isolated within a single VM on Android, so this method
+     * <i>always</i> throws a {@code SecurityException}.
      *
      * @param sm a security manager
      * @throws SecurityException always
@@ -678,7 +679,7 @@ public final class System {
 
         private String toNonNullString(Object o) {
             if (o == null) {
-                throw new NullPointerException();
+                throw new NullPointerException("o == null");
             }
             return (String) o;
         }

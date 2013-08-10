@@ -42,13 +42,13 @@ public class FileTest extends junit.framework.TestCase {
     }
 
     private static File createDeepStructure(File base) throws Exception {
-        // 64 character string length should be safe for everything.
-        int strlen = 64;
-        String longString = longString(strlen);
-        // Keep creating subdirectories until the path length is max of 159 bytes.
+        // ext has a limit of around 256 characters for each path entry.
+        // 128 characters should be safe for everything but FAT.
+        String longString = longString(128);
+        // Keep creating subdirectories until the path length is greater than 1KiB.
         // Ubuntu 8.04's kernel is happy up to about 4KiB.
         File f = base;
-        for (int i = 0;( f.toString().length() + strlen) <= 159; ++i) {
+        for (int i = 0; f.toString().length() <= 1024; ++i) {
             f = new File(f, longString);
             assertTrue(f.mkdir());
         }
@@ -63,14 +63,13 @@ public class FileTest extends junit.framework.TestCase {
     }
 
     // readlink(2) is a special case,.
-    //Modify test_longReadlink to only test up to a maximum of 159 characters for yaffs2.
     public void test_longReadlink() throws Exception {
         File base = createTemporaryDirectory();
         File target = createDeepStructure(base);
         File source = new File(base, "source");
         assertFalse(source.exists());
         assertTrue(target.exists());
-        assertTrue(target.getCanonicalPath().length() <= 159);
+        assertTrue(target.getCanonicalPath().length() > 1024);
         ln_s(target, source);
         assertTrue(source.exists());
         assertEquals(target.getCanonicalPath(), source.getCanonicalPath());
@@ -147,13 +146,6 @@ public class FileTest extends junit.framework.TestCase {
 
     // http://b/3047893 - getCanonicalPath wasn't actually resolving symbolic links.
     public void test_getCanonicalPath() throws Exception {
-        if (new File("/sdcard").exists()) {
-            // This assumes the current Android setup where /sdcard is a symbolic link to
-            // /mnt/sdcard.
-            File testFile = new File("/sdcard/test1.txt");
-            assertEquals("/mnt/sdcard/test1.txt", testFile.getCanonicalPath());
-        }
-
         // This assumes you can create symbolic links in the temporary directory. This isn't
         // true on Android if you're using /sdcard. It will work in /data/local though.
         File base = createTemporaryDirectory();
@@ -232,5 +224,46 @@ public class FileTest extends junit.framework.TestCase {
         assertTrue(new File("/").getFreeSpace() >= 0);
         assertTrue(new File("/").getTotalSpace() >= 0);
         assertTrue(new File("/").getUsableSpace() >= 0);
+    }
+
+    public void test_mkdirs() throws Exception {
+        // Set up a directory to test in.
+        File base = createTemporaryDirectory();
+
+        // mkdirs returns true only if it _creates_ a directory.
+        // So we get false for a directory that already exists...
+        assertTrue(base.exists());
+        assertFalse(base.mkdirs());
+        // But true if we had to create something.
+        File a = new File(base, "a");
+        assertFalse(a.exists());
+        assertTrue(a.mkdirs());
+        assertTrue(a.exists());
+
+        // Test the recursive case where we need to create multiple parents.
+        File b = new File(a, "b");
+        File c = new File(b, "c");
+        File d = new File(c, "d");
+        assertTrue(a.exists());
+        assertFalse(b.exists());
+        assertFalse(c.exists());
+        assertFalse(d.exists());
+        assertTrue(d.mkdirs());
+        assertTrue(a.exists());
+        assertTrue(b.exists());
+        assertTrue(c.exists());
+        assertTrue(d.exists());
+
+        // Test the case where the 'directory' exists as a file.
+        File existsAsFile = new File(base, "existsAsFile");
+        existsAsFile.createNewFile();
+        assertTrue(existsAsFile.exists());
+        assertFalse(existsAsFile.mkdirs());
+
+        // Test the case where the parent exists as a file.
+        File badParent = new File(existsAsFile, "sub");
+        assertTrue(existsAsFile.exists());
+        assertFalse(badParent.exists());
+        assertFalse(badParent.mkdirs());
     }
 }

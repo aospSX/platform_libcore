@@ -29,10 +29,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.RandomAccess;
 import java.util.Set;
+import junit.framework.Assert;
 import junit.framework.TestCase;
 
 public final class ReflectionTest extends TestCase {
-
     String classA = "libcore.java.lang.reflect.ReflectionTest$A";
     String classB = "libcore.java.lang.reflect.ReflectionTest$B";
     String classC = "libcore.java.lang.reflect.ReflectionTest$C";
@@ -43,6 +43,29 @@ public final class ReflectionTest extends TestCase {
     public void testGenericSuperclassToString() throws Exception {
         assertEquals("java.util.ArrayList<" + classA + ">",
                 AList.class.getGenericSuperclass().toString());
+    }
+
+    public void testClassGetName() {
+        assertEquals("int", int.class.getName());
+        assertEquals("[I", int[].class.getName());
+        assertEquals("java.lang.String", String.class.getName());
+        assertEquals("[Ljava.lang.String;", String[].class.getName());
+        assertEquals("libcore.java.lang.reflect.ReflectionTest", getClass().getName());
+        assertEquals(getClass().getName() + "$A", A.class.getName());
+        assertEquals(getClass().getName() + "$B", B.class.getName());
+        assertEquals(getClass().getName() + "$DefinesMember", DefinesMember.class.getName());
+    }
+
+    public void testClassGetCanonicalName() {
+        assertEquals("int", int.class.getCanonicalName());
+        assertEquals("int[]", int[].class.getCanonicalName());
+        assertEquals("java.lang.String", String.class.getCanonicalName());
+        assertEquals("java.lang.String[]", String[].class.getCanonicalName());
+        assertEquals("libcore.java.lang.reflect.ReflectionTest", getClass().getCanonicalName());
+        assertEquals(getClass().getName() + ".A", A.class.getCanonicalName());
+        assertEquals(getClass().getName() + ".B", B.class.getCanonicalName());
+        assertEquals(getClass().getName() + ".DefinesMember",
+                DefinesMember.class.getCanonicalName());
     }
 
     public void testFieldToString() throws Exception {
@@ -254,6 +277,28 @@ public final class ReflectionTest extends TestCase {
         assertEquals(1, count(names(fields), "field"));
     }
 
+    /**
+     * Class.isEnum() erroneously returned true for indirect descendants of
+     * Enum. http://b/1062200.
+     */
+    public void testClassIsEnum() {
+        Class<?> trafficClass = TrafficLights.class;
+        Class<?> redClass = TrafficLights.RED.getClass();
+        Class<?> yellowClass = TrafficLights.YELLOW.getClass();
+        Class<?> greenClass = TrafficLights.GREEN.getClass();
+        assertSame(trafficClass, redClass);
+        assertNotSame(trafficClass, yellowClass);
+        assertNotSame(trafficClass, greenClass);
+        assertNotSame(yellowClass, greenClass);
+        assertTrue(trafficClass.isEnum());
+        assertTrue(redClass.isEnum());
+        assertFalse(yellowClass.isEnum());
+        assertFalse(greenClass.isEnum());
+        assertNotNull(trafficClass.getEnumConstants());
+        assertNull(yellowClass.getEnumConstants());
+        assertNull(greenClass.getEnumConstants());
+    }
+
     static class A {}
     static class AList extends ArrayList<A> {}
 
@@ -318,5 +363,16 @@ public final class ReflectionTest extends TestCase {
             }
         }
         return result;
+    }
+
+    enum TrafficLights {
+        RED,
+        YELLOW {},
+        GREEN {
+            @SuppressWarnings("unused")
+            int i;
+            @SuppressWarnings("unused")
+            void foobar() {}
+        }
     }
 }
